@@ -2,9 +2,10 @@
 
 一个以上海理工大学军工路校区为背景的**单机文字 MUD**，纯 Java 控制台程序，无第三方依赖。
 
-- 14 个校园场景、7 位 NPC、6 个学业怪物、8 道谜题、8 枚印章
+- 14 个校园场景、8 位 NPC、6 个学业怪物、8 道谜题、8 枚印章
 - 走路耗体力、刷题涨学分、体力归零会被强制送回宿舍
 - 谜题 / 寻宝 / 回合制对决三条线交织，收集 6 枚印章开启图书馆顶层门禁
+- 支线「照片里的 1987」：从旧信箱里的毕业照，追到校门口保安大叔的往事
 
 ## 快速开始
 
@@ -13,7 +14,7 @@ Windows 下双击：
 ```
 compile.bat     # 编译
 run.bat         # 运行
-test.bat        # 运行自测（23 项断言）
+test.bat        # 运行自测（40 项断言）
 ```
 
 或者手动执行：
@@ -33,22 +34,23 @@ java -Dstdout.encoding=UTF-8 -Dfile.encoding=UTF-8 -cp out usst.mud.Game
 ## 目录结构
 
 ```
-├─ src/usst/mud/          游戏源码（12 个类）
+├─ src/usst/mud/          游戏源码（13 个类）
 │  ├─ Game.java           主循环、时间推进、场景描述、战斗调度
 │  ├─ Player.java         玩家：体力 / 学分 / 行动 / 背包，含透支联动
 │  ├─ Room.java           场景：描述、六个方向的出口数组
 │  ├─ CampusData.java     6 个一维对象数组：场景 / NPC / 怪物 / 谜题 / 物品 / 事件
 │  ├─ CommandProcessor.java  指令解析（processCommand）
 │  ├─ Battle.java         回合制对决
-│  ├─ NPC.java            对话与任务发放
+│  ├─ NPC.java            对话与任务发放（支持多段剧情）
+│  ├─ TalkStep.java       多段支线中的一段对话
 │  ├─ Monster.java        对手
 │  ├─ Question.java       谜题与答案判定
 │  ├─ Item.java           物品
 │  ├─ Inventory.java      背包（数组实现，16 格）
 │  └─ CampusEvent.java    随机校园事件
 ├─ test/usst/mud/SmokeTest.java   不启动游戏的自测类
-├─ demo1.txt ~ demo4.txt  四份脚本化输入
-├─ run1.txt ~ run4.txt    对应的完整运行实录
+├─ demo1.txt ~ demo5.txt  五份脚本化输入
+├─ run1.txt ~ run5.txt    对应的完整运行实录
 ├─ compile.bat / run.bat / test.bat
 ├─ README.md
 └─ 课程报告.md
@@ -90,6 +92,7 @@ java -Dstdout.encoding=UTF-8 -Dfile.encoding=UTF-8 -cp out usst.mud.Game
 1. 在校门口与**保安大叔**对话，拿到第一枚印章；
 2. 去**教育超市**搜出猫粮，回**湛恩大道**喂校猫，换第二枚；
 3. 在**思裴堂**搜索旧信箱、在**思晏堂**击败四六级词灵、在**格致堂**击败高数幽灵，各得一枚；
+   - 顺手在思裴堂第二次搜索，可以触发支线「照片里的 1987」；
 4. 答对 2 题找**社团学长**、答对 4 题找**图书馆管理员**，再得两枚；
 5. 集齐 6 枚后上图书馆顶层，击败「选课系统·熵」通关。
 
@@ -102,14 +105,15 @@ java -Dstdout.encoding=UTF-8 -Dfile.encoding=UTF-8 -cp out usst.mud.Game
 | 指出代码问题 | 静态数组里混入可变状态、`Game` 与 `System.in` 强耦合，见报告 2.3 |
 | 真正的封装 | `Player` 与 `Room` 全部字段 private，构造器校验，业务方法维护边界 |
 | 体力归零联动 | `Player.consumeEnergy()` 内部调用私有 `collapse()` |
-| 一维对象数组 | `CampusData` 中 6 个数组，共 57 个对象 |
+| 一维对象数组 | `CampusData` 中 6 个数组，共 60 个对象 |
 | 数组遍历 / 查找 | `look()` 遍历 NPC 与怪物，`itemById()`、`findNpc()`、`countOfType()` |
 | 独立命令处理 | `CommandProcessor.processCommand()` |
 | Random | 随机事件、抽题、掉落、战斗暴击、逃跑 |
 | Math | 体力 / 学分 / 伤害的上下界 |
 | String | `trim`、`split`、`toLowerCase`、`equalsIgnoreCase`、`contains`、`replace` |
 | toString | `Player`、`Room`、`Item`、`Monster` 均重写 |
+| 多段剧情 | `NPC` + `TalkStep`，支线阶段存在 `Player` 的 `questStages` 里 |
 
 ## 自测
 
-`test.bat` 会直接构造 `Player` / `Battle` 对象，验证 23 条规则（体力夹紧、学分上下限、出口合法性、判题容错、背包容量、Boss 战），不依赖控制台输入。
+`test.bat` 会直接构造 `Player` / `Battle` 对象，验证 40 条规则（体力夹紧、学分上下限、出口合法性、判题容错、背包容量、支线阶段流转、Boss 战），不依赖控制台输入。

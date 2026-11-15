@@ -12,6 +12,16 @@ public final class CampusData {
 
     public static final int TOTAL_STAMPS = 8;
 
+    /** 支线「照片里的 1987」的 id 与各阶段提示 */
+    public static final String PHOTO_QUEST_ID = "photo1987";
+    public static final String[] PHOTO_QUEST_HINTS = {
+            "思裴堂的旧信箱里好像还有东西。",
+            "把照片拿给思裴堂的陈教授看看。",
+            "去图书馆的旧档案柜找 1987 届毕业册。",
+            "去校门找保安大叔，把照片还给他。",
+            "已完成：照片里的 1987。"
+    };
+
     // ==================== 场景下标常量 ====================
     public static final int ROOM_GATE = 0;
     public static final int ROOM_ROAD = 1;
@@ -45,7 +55,9 @@ public final class CampusData {
             new Item("stamp_hall", "印章·大礼堂", "社团学长郑重交给你的印章", Item.Type.STAMP, 0, 0),
             new Item("stamp_gezhi", "印章·格致堂", "高数幽灵消散后露出的印章", Item.Type.STAMP, 0, 0),
             new Item("stamp_lib", "印章·湛恩图书馆", "管理员从抽屉最深处取出的印章", Item.Type.STAMP, 0, 0),
-            new Item("stamp_final", "印章·选课系统", "最后一枚印章，表面印着不断滚动的课程代码", Item.Type.STAMP, 0, 0)
+            new Item("stamp_final", "印章·选课系统", "最后一枚印章，表面印着不断滚动的课程代码", Item.Type.STAMP, 0, 0),
+            new Item("yearbook", "1987 届毕业册", "扉页上有一行手写赠言：愿母校的每一次选课，都不再排队", Item.Type.QUEST, 0, 0),
+            new Item("badge_1987", "1987 校徽", "一枚掉了漆的校徽，背面刻着 1987", Item.Type.QUEST, 0, 0)
     };
 
     // ==================== 一维对象数组：谜题 ====================
@@ -82,7 +94,7 @@ public final class CampusData {
     public static final Room[] ROOMS = new Room[14];
 
     // ==================== 一维对象数组：NPC ====================
-    public static final NPC[] NPCS = new NPC[7];
+    public static final NPC[] NPCS = new NPC[8];
 
     // ==================== 一维对象数组：对手 ====================
     public static final Monster[] MONSTERS = new Monster[6];
@@ -212,7 +224,18 @@ public final class CampusData {
     private static void buildNpcs() {
         NPCS[0] = new NPC("保安大叔", "校门保安", ROOM_GATE,
                 new String[]{"小伙子，学生证带了吗？", "这门楼比你我年纪都大，站好喽。", "往里走，别在门口堵着。"},
-                null, "stamp_gate", 2, 0, "把学生证给我看看。");
+                null, "stamp_gate", 2, 0, "把学生证给我看看。",
+                new TalkStep[]{
+                        new TalkStep(PHOTO_QUEST_ID, 3, "photo", "photo", "badge_1987", 6, 4,
+                                new String[]{
+                                        "……你从哪儿翻出来的。",
+                                        "（他看了很久，手指在照片边缘来回摩挲。）",
+                                        "那时候选课要排一整天队。我们几个通宵写程序，就想让同学少排会儿队。",
+                                        "后来系统越改越大，我也调去了保卫处。",
+                                        "这个给你。1987 年的校徽，还有一句旧口令——你到机房，输 1987，它会让你一步。"
+                                },
+                                "（他看了看你，又低头擦起了搪瓷杯。）")
+                });
 
         NPCS[1] = new NPC("校猫", "橘白猫", ROOM_ROAD,
                 new String[]{"喵。", "喵喵——（它尾巴一甩，指向图书馆的方向）", "（它打了个哈欠，露出两颗小尖牙）"},
@@ -237,6 +260,32 @@ public final class CampusData {
         NPCS[6] = new NPC("食堂阿姨", "三号窗口", ROOM_CANTEEN,
                 new String[]{"要辣吗？", "肉包刚出笼，趁热。", "同学，饭卡刷一下。"},
                 null, "baozi", 0, 0, "……");
+
+        NPCS[7] = new NPC("陈教授", "退休教师", ROOM_SIPEI,
+                new String[]{
+                        "旧信箱里总有些没人认领的东西。",
+                        "1987 年啊……那会儿校名还是上海机械学院。",
+                        "人老了，就爱翻旧账。"
+                },
+                null, null, 0, 0, "……",
+                new TalkStep[]{
+                        new TalkStep(PHOTO_QUEST_ID, 1, "photo", null, null, 0, 2,
+                                new String[]{
+                                        "这张照片……给我看看。",
+                                        "思晏堂门口，1987 届计算机系。后排左三，周建国。",
+                                        "毕业第二年他就留校了。学校第一版选课系统，是他和两个同事在机房里熬出来的。",
+                                        "你能去图书馆的旧档案柜，找找那一届的毕业册吗？我想确认一件事。"
+                                },
+                                "把照片拿给我看看。"),
+                        new TalkStep(PHOTO_QUEST_ID, 2, "yearbook", "yearbook", null, 0, 3,
+                                new String[]{
+                                        "扉页上有字。",
+                                        "『愿母校的每一次选课，都不再排队。——周建国，1987』",
+                                        "他现在在校门口当保安。每年校庆都来，从不进礼堂。",
+                                        "把照片还给他吧。有些话，得当面说。"
+                                },
+                                "去图书馆的旧档案柜找找 1987 届毕业册。")
+                });
     }
 
     private static void buildMonsters() {

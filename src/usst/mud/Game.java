@@ -249,7 +249,20 @@ public class Game {
         out("");
         out(player.toString());
         out("时间：第 " + day + " 天 " + clockText());
+        out("支线：照片里的 1987 —— " + questHint());
         out("校园里已被击败的对手：" + CampusData.defeatedCount() + "/" + CampusData.MONSTERS.length);
+    }
+
+    private String questHint() {
+        int stage = player.getQuestStage(CampusData.PHOTO_QUEST_ID);
+        if (stage < 0 || stage >= CampusData.PHOTO_QUEST_HINTS.length) {
+            return "……";
+        }
+        // 阶段 2 拿到毕业册后，提示改成"去交任务"，避免玩家以为还要继续找
+        if (stage == 2 && player.getBag().has("yearbook")) {
+            return "把毕业册交给陈教授。";
+        }
+        return CampusData.PHOTO_QUEST_HINTS[stage];
     }
 
     public void help() {
@@ -406,8 +419,18 @@ public class Game {
         out("你在「" + room.getName() + "」里仔细翻找……");
 
         String foundId = null;
-        // 第一次搜索：优先给"保底物品"
-        if (room.getGuaranteedItemId() != null && !room.isGuaranteedTaken()) {
+        // 支线「照片里的 1987」：第二次搜索思裴堂，必得旧信箱里的老照片
+        if (room.getId() == CampusData.ROOM_SIPEI
+                && room.isGuaranteedTaken()
+                && !player.getBag().has("photo")) {
+            foundId = "photo";
+        } else if (room.getId() == CampusData.ROOM_LIBRARY
+                && player.getQuestStage(CampusData.PHOTO_QUEST_ID) == 2
+                && !player.getBag().has("yearbook")) {
+            // 支线阶段 2：图书馆旧档案柜必得毕业册
+            foundId = "yearbook";
+        } else if (room.getGuaranteedItemId() != null && !room.isGuaranteedTaken()) {
+            // 第一次搜索：优先给"保底物品"
             foundId = room.getGuaranteedItemId();
             room.markGuaranteedTaken();
         } else {
@@ -433,8 +456,18 @@ public class Game {
                 out("【印章】当前 " + player.getStampCount() + "/" + CampusData.TOTAL_STAMPS
                         + "，集齐 6 枚就能开启图书馆顶层的门禁。");
             }
+            onItemAcquired(item);
         } else {
             out("你找到了「" + item.getName() + "」，可惜背包已经满了。");
+        }
+    }
+
+    /** 拿到支线关键道具时推进阶段，避免"先随机掉到照片、NPC 却不认"的死结 */
+    private void onItemAcquired(Item item) {
+        if ("photo".equals(item.getId())
+                && player.getQuestStage(CampusData.PHOTO_QUEST_ID) < 1) {
+            player.setQuestStage(CampusData.PHOTO_QUEST_ID, 1);
+            out("照片背面有一行褪色的字：1987。也许该找人问问。");
         }
     }
 
@@ -575,6 +608,12 @@ public class Game {
             return;
         }
         battle = new Battle(player, monster, random);
+        // 支线奖励：1987 年的旧口令会让选课系统的防火墙降级
+        if (monster.isBoss() && player.getBag().has("badge_1987")) {
+            monster.takeDamage(20);
+            out("");
+            out("屏幕上滚过一行旧日志：检测到 1987 级管理员口令，防火墙降级。");
+        }
         out("");
         out(battle.start());
     }
@@ -690,6 +729,10 @@ public class Game {
         out("梧桐叶落下来，盖住了 1916 年的石阶。");
         out("");
         out("保安大叔的声音从楼下传来：「小伙子，熄灯了——」");
+        if (player.getQuestStage(CampusData.PHOTO_QUEST_ID) >= 4) {
+            out("");
+            out("校史馆的捐赠名录上，多了一行字：周建国，1987 届，捐赠 1987 年校徽一枚。");
+        }
         out("");
         out("【通关统计】");
         out("  姓名：" + player.getName() + "    等级：" + player.getLevel());

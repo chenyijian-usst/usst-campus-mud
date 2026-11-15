@@ -119,6 +119,11 @@ public class Inventory {
         return kinds == 0;
     }
 
+    /** 背包是否已满（用于任务奖励前的容量检查） */
+    public boolean isFull() {
+        return kinds >= MAX_SLOTS;
+    }
+
     /** 供界面显示的一行文字，例如 "肉包×1、猫粮×2" */
     public String list() {
         if (kinds == 0) {

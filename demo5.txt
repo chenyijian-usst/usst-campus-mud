@@ -1,0 +1,24 @@
+周小满
+talk 保安大叔
+go north
+east
+north
+search
+search
+status
+talk 陈教授
+south
+west
+north
+search
+status
+south
+east
+north
+talk 陈教授
+south
+west
+south
+talk 保安大叔
+status
+quit

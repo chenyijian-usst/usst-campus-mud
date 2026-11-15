@@ -1,5 +1,8 @@
 package usst.mud;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 玩家角色。
  *
@@ -22,6 +25,7 @@ public class Player {
     private final String name;
     private final Room respawnRoom;      // 体力透支后强制传送的场景（宿舍）
     private final Inventory bag;
+    private final Map<String, Integer> questStages;   // 支线 id -> 当前阶段
 
     private int energy;
     private int credit;
@@ -47,6 +51,7 @@ public class Player {
         this.currentRoom = startRoom;
         this.respawnRoom = respawnRoom;
         this.bag = new Inventory();
+        this.questStages = new HashMap<>();
         this.energy = MAX_ENERGY;
         this.credit = 0;
         this.actionsLeft = DAILY_ACTIONS;
@@ -253,6 +258,20 @@ public class Player {
 
     public int getStampCount() {
         return bag.countOfType(Item.Type.STAMP);
+    }
+
+    /** 读取某条支线的阶段，未开始时为 0 */
+    public int getQuestStage(String questId) {
+        Integer stage = questStages.get(questId);
+        return stage == null ? 0 : stage;
+    }
+
+    /** 推进/回退某条支线的阶段，负数会被夹到 0 */
+    public void setQuestStage(String questId, int stage) {
+        if (questId == null || questId.trim().isEmpty()) {
+            throw new IllegalArgumentException("支线 id 不能为空");
+        }
+        questStages.put(questId, Math.max(0, stage));
     }
 
     /** 刚刚这一次操作是否触发了体力透支（由 consumeEnergy 复位） */

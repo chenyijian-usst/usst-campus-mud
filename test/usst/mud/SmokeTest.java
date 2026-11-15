@@ -20,6 +20,7 @@ public class SmokeTest {
         testRoomExitData();
         testQuestionCheck();
         testInventoryCapacity();
+        testSideQuest();
         testBossBattle();
 
         System.out.println();
@@ -80,6 +81,9 @@ public class SmokeTest {
         check("场景数组长度为 14", CampusData.ROOMS.length == 14);
         check("对手数组长度为 6", CampusData.MONSTERS.length == 6);
         check("谜题数组长度为 8", CampusData.QUESTIONS.length == 8);
+        check("NPC 数组长度为 8", CampusData.NPCS.length == 8);
+        check("物品数组长度为 18", CampusData.ITEMS.length == 18);
+        check("支线阶段提示共 5 条", CampusData.PHOTO_QUEST_HINTS.length == 5);
     }
 
     /** 判题要兼容多余空格和大小写 */
@@ -94,13 +98,60 @@ public class SmokeTest {
     private static void testInventoryCapacity() {
         Inventory inventory = new Inventory();
         boolean allAdded = true;
-        for (int i = 0; i < CampusData.ITEMS.length; i++) {
+        for (int i = 0; i < 16; i++) {
             allAdded = allAdded && inventory.add(CampusData.ITEMS[i]);
         }
-        check("16 种物品可以全部放入背包", allAdded);
-        Item extra = new Item("extra", "多余物品", "测试用", Item.Type.TOOL, 0, 0);
-        check("背包满后拒绝新物品", !inventory.add(extra));
+        check("背包可以放下 16 种物品", allAdded);
+        check("背包第 17 格被拒绝", !inventory.add(CampusData.ITEMS[16]));
         check("按类型统计印章数量", inventory.countOfType(Item.Type.STAMP) == 8);
+    }
+
+    /** 支线「照片里的 1987」：阶段推进、道具消耗、保安第二段对话 */
+    private static void testSideQuest() {
+        Player player = new Player("测试员",
+                CampusData.ROOMS[CampusData.ROOM_SIPEI],
+                CampusData.ROOMS[CampusData.ROOM_DORM]);
+        NPC professor = CampusData.findNpc(CampusData.ROOM_SIPEI, "陈教授");
+        check("思裴堂能找到陈教授", professor != null);
+        if (professor == null) {
+            return;
+        }
+
+        // 阶段 1：拿到照片
+        player.getBag().add(CampusData.itemById("photo"));
+        player.setQuestStage(CampusData.PHOTO_QUEST_ID, 1);
+        String firstTalk = professor.talk(player);
+        check("陈教授认出照片里的人", firstTalk.contains("周建国"));
+        check("照片阶段推进到 2", player.getQuestStage(CampusData.PHOTO_QUEST_ID) == 2);
+        check("照片不会被收走", player.getBag().has("photo"));
+
+        // 阶段 2：还没有毕业册
+        String noYearbook = professor.talk(player);
+        check("缺毕业册时给出提示", noYearbook.contains("毕业册"));
+        check("缺毕业册时不推进阶段", player.getQuestStage(CampusData.PHOTO_QUEST_ID) == 2);
+
+        // 阶段 2：拿到毕业册并交付
+        player.getBag().add(CampusData.itemById("yearbook"));
+        professor.talk(player);
+        check("毕业册被收走", !player.getBag().has("yearbook"));
+        check("真相阶段推进到 3", player.getQuestStage(CampusData.PHOTO_QUEST_ID) == 3);
+
+        // 阶段 3：保安先发印章，再认照片
+        Player guardPlayer = new Player("测试员",
+                CampusData.ROOMS[CampusData.ROOM_GATE],
+                CampusData.ROOMS[CampusData.ROOM_DORM]);
+        NPC guard = CampusData.findNpc(CampusData.ROOM_GATE, "保安大叔");
+        guard.talk(guardPlayer);
+        check("保安的第一段对话仍然发印章", guardPlayer.getBag().has("stamp_gate"));
+
+        guardPlayer.getBag().add(CampusData.itemById("photo"));
+        guardPlayer.setQuestStage(CampusData.PHOTO_QUEST_ID, 3);
+        String guardTalk = guard.talk(guardPlayer);
+        check("保安认出老照片", guardTalk.contains("1987"));
+        check("拿到 1987 校徽", guardPlayer.getBag().has("badge_1987"));
+        check("支线完成阶段为 4", guardPlayer.getQuestStage(CampusData.PHOTO_QUEST_ID) == 4);
+        check("照片被保安收走", !guardPlayer.getBag().has("photo"));
+        check("支线奖励学分到账", guardPlayer.getCredit() >= 6);
     }
 
     /** 集齐 6 枚印章后可以打赢最终 Boss */

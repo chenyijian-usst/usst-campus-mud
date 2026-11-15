@@ -5,9 +5,12 @@ import java.util.Random;
 /**
  * 校园 NPC。
  *
- * talk() 是一个带业务规则的对象方法：它自己判断"玩家是否答够题、
- * 是否带着任务道具"，满足条件才发放学分和印章，并且只发放一次。
- * 这样 Game 里就不需要写一堆 if，职责边界很清晰。
+ * 支持两种模式：
+ * 1. 一次性任务（原有模式）：满足条件后发一次奖励，然后只聊闲话；
+ * 2. 多段剧情：挂一组 TalkStep，玩家处于不同支线阶段时触发不同的对话。
+ *
+ * 两种模式可以共存：保安大叔先用一次性任务发印章，完成后再在支线阶段 3
+ * 触发"认出老照片"的第二段对话。
  */
 public class NPC {
 
@@ -20,12 +23,22 @@ public class NPC {
     private final int creditReward;
     private final int needSolved;        // 需要已答对的题目数
     private final String hint;           // 条件不满足时的提示
+    private final TalkStep[] steps;      // 多段支线对话，可为 null
     private final Random random = new Random();
     private boolean finished;
 
+    /** 一次性任务 NPC */
     public NPC(String name, String role, int roomId, String[] lines,
                String requireItemId, String rewardItemId, int creditReward,
                int needSolved, String hint) {
+        this(name, role, roomId, lines, requireItemId, rewardItemId,
+                creditReward, needSolved, hint, null);
+    }
+
+    /** 一次性任务 + 多段支线对话 */
+    public NPC(String name, String role, int roomId, String[] lines,
+               String requireItemId, String rewardItemId, int creditReward,
+               int needSolved, String hint, TalkStep[] steps) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("NPC 名字不能为空");
         }
@@ -44,30 +57,49 @@ public class NPC {
         this.creditReward = creditReward;
         this.needSolved = needSolved;
         this.hint = hint == null ? "……" : hint;
+        this.steps = steps == null ? null : steps.clone();
     }
 
     /**
      * 与 NPC 对话。
-     * 返回值直接就是给玩家看的文本，NPC 内部完成"校验 -> 扣道具 -> 发奖励"。
+     * 顺序：先走未完成的一次性任务，再匹配当前支线阶段的对话，最后才是闲话。
      */
     public String talk(Player player) {
         if (player == null) {
             throw new IllegalArgumentException("玩家不能为空");
         }
-        // 1. 已经完成过的 NPC，只说闲话
-        if (finished) {
-            return name + "：" + randomLine();
+        if (!finished && hasSimpleQuest()) {
+            return simpleTalk(player);
         }
-        // 2. 题目数量不够
+        if (steps != null) {
+            for (int i = 0; i < steps.length; i++) {
+                if (!steps[i].matches(player)) {
+                    continue;
+                }
+                if (!steps[i].canApply(player)) {
+                    return name + "：" + steps[i].getHint();
+                }
+                return name + "：" + steps[i].apply(player);
+            }
+        }
+        return name + "：" + randomLine();
+    }
+
+    /** 是否配置了"一次性任务" */
+    private boolean hasSimpleQuest() {
+        return requireItemId != null || rewardItemId != null
+                || creditReward > 0 || needSolved > 0;
+    }
+
+    /** 原有的一次性任务逻辑 */
+    private String simpleTalk(Player player) {
         if (needSolved > 0 && player.getSolvedCount() < needSolved) {
             return name + "：" + hint + "\n（进度：已答对 " + player.getSolvedCount()
                     + "/" + needSolved + " 题）";
         }
-        // 3. 缺少任务道具
         if (requireItemId != null && !player.getBag().has(requireItemId)) {
             return name + "：" + hint;
         }
-        // 4. 条件满足：扣除道具、发放奖励
         StringBuilder sb = new StringBuilder();
         sb.append(name).append("：").append(randomLine());
         if (requireItemId != null) {
