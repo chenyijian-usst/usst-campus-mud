@@ -1,0 +1,22 @@
+王小满
+go north
+talk 校猫
+east
+look
+fight
+attack
+attack
+attack
+attack
+attack
+status
+north
+search
+east
+north
+study
+study
+study
+status
+rest
+quit

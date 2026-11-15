@@ -1,0 +1,18 @@
+赵小满
+go 北
+east
+north
+east
+east
+search
+bag
+west
+west
+south
+west
+talk 校猫
+use 肉包
+north
+up
+look
+quit

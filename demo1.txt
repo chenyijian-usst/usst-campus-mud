@@ -1,0 +1,17 @@
+陆小满
+help
+look
+talk 保安大叔
+go south
+go
+go north
+map
+status
+quiz
+hint
+answer 思学志远
+answer 米拉德
+bag
+xyz
+
+quit

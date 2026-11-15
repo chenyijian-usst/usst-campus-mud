@@ -1,0 +1,13 @@
+# 编译产物
+out/
+*.class
+sources.txt
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 系统文件
+Thumbs.db
+.DS_Store
